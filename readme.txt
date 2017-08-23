@@ -1,4 +1,4 @@
-My solution to the cs231n course can be found here.
+My solution to the cs231n course assignments can be found here.
 
 For more details about the course, notes, references and the assignment, please check the below link,
 
