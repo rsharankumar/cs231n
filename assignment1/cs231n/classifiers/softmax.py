@@ -29,7 +29,28 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  # compute the loss and the gradient
+  num_class = W.shape[1]
+  num_train = X.shape[0]
+  loss = 0.0
+  for i in xrange(num_train):
+    scores = X[i].dot(W)
+    exp_scores = np.exp(scores)
+    prob_scores = exp_scores / np.sum(exp_scores)
+    loss -= np.log(prob_scores[y[i]])
+    for j in xrange(num_class):
+      dW[:,j] += X[i] * prob_scores[j]
+    dW[:,y[i]] -= X[i] * prob_scores[y[i]]
+    dW[:,y[i]] -= X[i] * (1 - prob_scores[y[i]])
+
+  # Right now the loss is a sum over all training examples, but we want it
+  # to be an average instead so we divide by num_train.
+  loss /= num_train
+  dW /= num_train
+
+  # Add regularization to the loss.
+  loss += 0.5 * reg * np.sum(W * W)
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -53,7 +74,23 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_train = X.shape[0]
+  num_class = W.shape[1]
+  scores = X.dot(W)
+  scores -= np.max(scores)
+  exp_scores = np.exp(scores)
+  prob_scores = (exp_scores.T / np.sum(exp_scores, axis = 1)).T
+  ccs = y + 1
+  correct_class = (ccs[:,None] == np.arange(ccs.max())+1).astype(int)
+  correct_scores = np.sum((exp_scores * correct_class), axis = 1)
+  correct_prob_scores = correct_scores / np.sum(exp_scores, axis = 1)
+  incorrect_class = np.where(correct_class == 1, 0, 1)
+  loss += np.sum(np.multiply((np.log(correct_prob_scores)),-1))
+  dW += X.T.dot(prob_scores - correct_class)
+  loss /= num_train
+  loss += 0.5 * reg * np.sum(W*W)
+  dW /= num_train
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
