@@ -324,7 +324,8 @@ def dropout_forward(x, dropout_param):
     # TODO: Implement the training phase forward pass for inverted dropout.   #
     # Store the dropout mask in the mask variable.                            #
     ###########################################################################
-    pass
+    mask = (np.random.rand(*x.shape) < p) / p
+    out = x * mask
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -332,7 +333,7 @@ def dropout_forward(x, dropout_param):
     ###########################################################################
     # TODO: Implement the test phase forward pass for inverted dropout.       #
     ###########################################################################
-    pass
+    out = x
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -359,7 +360,7 @@ def dropout_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the training phase backward pass for inverted dropout.  #
     ###########################################################################
-    pass
+    dx = dout * mask
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -396,7 +397,19 @@ def conv_forward_naive(x, w, b, conv_param):
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  pass
+  stride, pad = conv_param['stride'], conv_param['pad']
+  x_pad = np.pad(x, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant')
+  N, C, H, W = x.shape
+  F, C, HH, WW = w.shape
+  H1 = 1 + (H + 2 * pad - HH) / stride
+  W1 = 1 + (W + 2 * pad - WW) / stride
+  out = np.zeros((N, F, H1, W1))
+  for i in xrange(N):
+    for j in xrange(H1):
+      for k in xrange(W1):
+        for l in xrange(F):
+          temp_x = x_pad[i, :, j * stride : j * stride + HH, k * stride : k * stride + WW]
+          out[i, l, j, k] = np.sum(temp_x * w[l, :, :, :]) + b[l,]
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -421,7 +434,26 @@ def conv_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
-  pass
+  x, w, b, conv_param = cache[0], cache[1], cache[2], cache[3] 
+  stride, pad = conv_param['stride'], conv_param['pad']
+  N, C, H, W = x.shape
+  F, C, HH, WW = w.shape
+  H1, W1 = dout.shape[2], dout.shape[3]
+  dx = np.zeros(x.shape)
+  dw = np.zeros(w.shape)
+  db = np.zeros(b.shape)
+  db = np.sum(dout, axis = 0)
+  db = np.sum(db, axis = 1)
+  db = np.sum(db, axis = 1)
+  x_pad = np.pad(x, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant')
+  dx_pad = np.pad(dx, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant')
+  for i in xrange(N):
+    for j in xrange(H1):
+      for k in xrange(W1):
+        for l in xrange(F):
+          dx_pad[i, :, j * stride : j * stride + HH, k * stride : k * stride + WW] += dout[i, l, j, k] * w[l, :, :, :]
+          dw[l, :, :, :] += dout[i, l, j, k] * x_pad[i, :, j * stride : j * stride + HH, k * stride : k * stride + WW]
+  dx = dx_pad[:,:,pad:pad+H, pad:pad+W]
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
